@@ -5,6 +5,9 @@ import { useToast } from '@/components/ui/use-toast';
 import { ResearchInterest } from '@/components/about/ResearchInterest';
 import { SkillInput } from '@/components/about/SkillInput';
 import { useProfileData } from '@/hooks/useProfileData';
+import axios from "axios";
+
+const API_BASE_URL = "http://127.0.0.1:8000";
 
 export default function AboutMe() {
   const navigate = useNavigate();
@@ -68,6 +71,11 @@ export default function AboutMe() {
       }
 
       if (error) throw error;
+
+      await axios.post(`${API_BASE_URL}/update-interests`, {
+        user_id: user.id,
+        research_interests: filteredInterests.map(i => i.topic)
+      });
       
       navigate('/home');
       toast({

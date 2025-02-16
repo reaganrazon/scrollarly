@@ -107,6 +107,19 @@ export const PaperCard: React.FC<PaperCardProps> = ({
     setIsDisliked(!isDisliked);
   };
 
+  const handleShareClick = () => {
+    if (doi) {
+      window.open(`https://doi.org/${doi}`, '_blank');
+    } else {
+      toast({
+        title: "No link available",
+        description: "This paper doesn't have an associated DOI link",
+        variant: "destructive"
+      });
+    }
+  };
+
+
   return (
     <div 
       className="glass-card w-full h-full p-6 relative flex flex-col md:flex-row md:items-center overflow-y-auto"
@@ -157,7 +170,13 @@ export const PaperCard: React.FC<PaperCardProps> = ({
             )}
           </AnimatePresence>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full bg-white/10 hover:bg-white/20">
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="rounded-full bg-white/10 hover:bg-white/20"
+          onClick={handleShareClick}
+        >
           <Share2Icon className="w-5 h-5" />
         </Button>
       </div>

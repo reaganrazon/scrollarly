@@ -39,7 +39,8 @@ export function UserMenu({ open, onOpenChange }: UserMenuProps) {
         <div className="flex flex-col space-y-4 p-2">
           <Button
             variant="ghost"
-            className="flex items-center justify-start space-x-2 text-lg text-black hover:bg-gray-100"
+            className="flex items-center justify-start space-x-2 text-lg text-black hover:bg-gray-100 hover:text-black
+"
             onClick={() => {
               navigate('/aboutme');
               onOpenChange(false);
@@ -50,7 +51,8 @@ export function UserMenu({ open, onOpenChange }: UserMenuProps) {
           </Button>
           <Button
             variant="ghost"
-            className="flex items-center justify-start space-x-2 text-lg text-black hover:bg-gray-100"
+            className="flex items-center justify-start space-x-2 text-lg text-black hover:bg-gray-100 hover:text-black
+"
             onClick={() => {
               navigate('/saved');
               onOpenChange(false);
@@ -61,7 +63,8 @@ export function UserMenu({ open, onOpenChange }: UserMenuProps) {
           </Button>
           <Button
             variant="ghost"
-            className="flex items-center justify-start space-x-2 text-lg text-black hover:bg-gray-100"
+            className="flex items-center justify-start space-x-2 text-lg text-black hover:bg-gray-100 hover:text-black
+"
             onClick={() => {
               navigate('/liked');
               onOpenChange(false);

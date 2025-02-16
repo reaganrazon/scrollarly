@@ -1,27 +1,70 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// const availableColors = [
+//   "#FFE0E0", 
+//   "#E0FFE0",
+//   "#E0E0FF",
+//   "#FFE0FF", 
+//   "#FFFFE0", 
+//   "#E0FFFF", 
+//   "#FFE0E9", 
+//   "#E9FFE0", 
+//   "#E0EAFF", 
+//   "#FFE9E0", 
+//   "#F0E0FF", 
+//   "#E0FFE9", 
+// ];
+
+// export const getTopicColor = async (topic: string): Promise<string> => {
+//   if (!topic) return availableColors[0];
+  
+//   const normalizedTopic = topic.toLowerCase().trim();
+  
+//   const { data: existingColor } = await supabase
+//     .from('topic_colors')
+//     .select('color')
+//     .eq('topic', normalizedTopic)
+//     .single();
+
+//   if (existingColor) {
+//     return existingColor.color;
+//   }
+
+//   const { data: existingColors } = await supabase
+//     .from('topic_colors')
+//     .select('color');
+
+//   const usedColors = existingColors?.map(entry => entry.color) || [];
+  
+//   const newColor = availableColors.find(color => !usedColors.includes(color)) || availableColors[0];
+
+//   await supabase
+//     .from('topic_colors')
+//     .insert({
+//       topic: normalizedTopic,
+//       color: newColor
+//     });
+
+//   return newColor;
+// };
+
 const availableColors = [
-  "#FFE0E0", // Light Red
-  "#E0FFE0", // Light Green
-  "#E0E0FF", // Light Blue
-  "#FFE0FF", // Light Purple
-  "#FFFFE0", // Light Yellow
-  "#E0FFFF", // Light Cyan
-  "#FFE0E9", // Light Pink
-  "#E9FFE0", // Light Lime
-  "#E0EAFF", // Light Sky Blue
-  "#FFE9E0", // Light Coral
-  "#F0E0FF", // Light Lavender
-  "#E0FFE9", // Light Mint
+  "#FFE0E0", "#E0FFE0", "#E0E0FF", "#FFE0FF", "#FFFFE0", "#E0FFFF", 
+  "#FFE0E9", "#E9FFE0", "#E0EAFF", "#FFE9E0", "#F0E0FF", "#E0FFE9"
 ];
+
+const assignedColors = new Map<string, string>(); 
 
 export const getTopicColor = async (topic: string): Promise<string> => {
   if (!topic) return availableColors[0];
-  
+
   const normalizedTopic = topic.toLowerCase().trim();
-  
-  // Try to get existing color
+
+  if (assignedColors.has(normalizedTopic)) {
+    return assignedColors.get(normalizedTopic)!;
+  }
+
   const { data: existingColor } = await supabase
     .from('topic_colors')
     .select('color')
@@ -29,26 +72,22 @@ export const getTopicColor = async (topic: string): Promise<string> => {
     .single();
 
   if (existingColor) {
+    assignedColors.set(normalizedTopic, existingColor.color);
     return existingColor.color;
   }
 
-  // Get all existing colors to avoid duplicates
-  const { data: existingColors } = await supabase
-    .from('topic_colors')
-    .select('color');
+  // Get all colors already assigned in the database
+  const { data: existingColors } = await supabase.from('topic_colors').select('color');
+  const usedColors = new Set(existingColors?.map(entry => entry.color) || []);
 
-  const usedColors = existingColors?.map(entry => entry.color) || [];
-  
-  // Find first available color
-  const newColor = availableColors.find(color => !usedColors.includes(color)) || availableColors[0];
+  // Find the first available color
+  const newColor = availableColors.find(color => !usedColors.has(color)) || availableColors[0];
 
-  // Store new color mapping
-  await supabase
-    .from('topic_colors')
-    .insert({
-      topic: normalizedTopic,
-      color: newColor
-    });
+  // Insert into database
+  await supabase.from('topic_colors').insert({ topic: normalizedTopic, color: newColor });
+
+  // Cache the assigned color
+  assignedColors.set(normalizedTopic, newColor);
 
   return newColor;
 };

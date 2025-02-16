@@ -5,6 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { UserMenu } from '@/components/UserMenu';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getTopicColor } from '@/utils/topicColors';
+import { useAuth } from '@/hooks/useAuth';
+import axios from "axios";
+
+
+
+const API_BASE_URL = "http://127.0.0.1:8000";
+const { user } = useAuth();
 
 const backgrounds = [
   "linear-gradient(90deg, rgb(245,152,168) 0%, rgb(246,237,178) 100%)",
@@ -13,7 +20,21 @@ const backgrounds = [
   "linear-gradient(111.4deg, rgba(238,113,113,1) 1%, rgba(246,215,148,1) 58%)",
   "linear-gradient(225deg, #FFE29F 0%, #FFA99F 48%, #FF719A 100%)",
   "linear-gradient(to right, #ffc3a0 0%, #ffafbd 100%)",
+  
+  "linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)",  
+  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", 
+  "linear-gradient(150deg, #5ee7df 0%, #b490ca 100%)",  
+  "linear-gradient(160deg, #ff9a9e 0%, #fad0c4 100%)",  
+  "linear-gradient(180deg, #a1c4fd 0%, #c2e9fb 100%)", 
+  "linear-gradient(200deg, #fbc2eb 0%, #a6c1ee 100%)",  
+  "linear-gradient(220deg, #ffdde1 0%, #ee9ca7 100%)",  
+  "linear-gradient(240deg, #cfd9df 0%, #e2ebf0 100%)",  
+  "linear-gradient(270deg, #ff758c 0%, #ff7eb3 100%)",  
+  "linear-gradient(300deg, #fad0c4 0%, #ffd1ff 100%)",  
+  "linear-gradient(320deg, #ff9966 0%, #ff5e62 100%)",  
+  "linear-gradient(340deg, #00c6fb 0%, #005bea 100%)",  
 ];
+
 
 interface OpenAlexWork {
   title: string;
@@ -60,41 +81,41 @@ export default function Index() {
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
-    queryKey: ['papers'],
+    queryKey: ['papers',user?.id],
     initialPageParam: 1,
     queryFn: async ({ pageParam = 1 }) => {
-      const response = await fetch(
-        `https://api.openalex.org/works?filter=is_paratext:false&sort=publication_date:desc&per_page=6&page=${pageParam}`
-      );
-      const data = await response.json();
-      
-      const allProcessedPapers = await Promise.all(data.results.map(async (paper: OpenAlexWork): Promise<ProcessedPaper> => {
-        const topic = paper.primary_topic?.display_name || "Research";
-        const topicColor = await getTopicColor(topic);
-        
-        return {
-          title: paper.title,
-          authors: paper.authorships.map(a => a.author.display_name).join(', '),
-          abstract: paper.abstract || "Abstract not available",
-          date: paper.publication_year.toString(),
-          topic,
-          background: "",  // Will be set after
-          topicColor,
-          doi: paper.doi
-        };
-      }));
 
-      allProcessedPapers.forEach((paper, index) => {
-        paper.background = getRandomBackground(allProcessedPapers.slice(0, index));
+      const response = await axios.get(`${API_BASE_URL}/papers`, {
+        params: { user_id: user.id }
       });
 
+      console.log(response.data.papers)
+  
+      const papers = await Promise.all(
+        response.data.papers.map(async (paper: any) => ({
+          title: paper.title || "Untitled",
+          abstract: paper.abstract ? paper.abstract.split(".").slice(0, 3).join(".") + "." : "Click the link to read more!",
+          date: paper.pub_date?.toString() || "Unknown Date",
+          topic: paper.topics ? paper.topics.split(";")[0] : "Research",
+          topicColor: await getTopicColor(paper.topics.split(";")[0]), 
+          authors: paper.authorships 
+            ? paper.authorships.split(";").slice(0, 2).join(" and ") 
+            : "Unknown Author",
+          doi: paper.doi || "N/A",
+        }))
+      );
+      
+      papers.forEach((paper, index) => {
+        paper.background = getRandomBackground(papers.slice(0, index));
+      });
+    
       return {
-        papers: allProcessedPapers,
+        papers,
         nextPage: pageParam + 1,
-        hasMore: data.results.length > 0,
+        hasMore: papers.length > 0,
       };
     },
-    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextPage : undefined,
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextPage : undefined),
   });
 
   const handleScroll = useCallback((entries: IntersectionObserverEntry[]) => {
