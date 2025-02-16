@@ -6,6 +6,10 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+
+console.log("OpenAI API Key:", import.meta.env.VITE_OPENAI_API_KEY);
+
 interface PaperDetailsProps {
   title: string;
   authors: string;
@@ -14,6 +18,7 @@ interface PaperDetailsProps {
   background: string;
   topic?: string;
   topicColor?: string;
+  abstract?: string
 }
 
 interface RelatedWork {
@@ -37,21 +42,52 @@ export default function PaperDetails() {
     }
   }, [paper, navigate, toast]);
 
-  const generateSummary = async () => {
-    setIsGeneratingSummary(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-summary', {
-        body: { title: paper.title }
-      });
+  
+  useEffect(() => {
+    console.log("location.state:", location.state);
+  }, [location]);
 
-      if (error) throw error;
-      setSummary(data.summary);
-    } catch (error) {
-      console.error('Error generating summary:', error);
+  const generateSummary = async () => {
+    if (!paper.doi) {
       toast({
         title: "Error",
-        description: "Could not generate summary",
-        variant: "destructive"
+        description: "No abstract available to summarize.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingSummary(true);
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4-turbo", 
+          messages: [
+            { role: "system", content: "Search for the paper given the title on OpenAlex and summarize the following research paper abstract in lay man's terms. Make sure to touch on background, methods (participants or strategy), key result, and conclusions.However, please generate it in a paragraph. No markdown. The last 2 sentences should be on how this paper connects to present day / current events." },
+            { role: "user", content: paper.title },
+          ],
+          max_tokens: 350,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+
+      setSummary(data.choices[0].message.content);
+    } catch (error) {
+      console.error("Error generating summary:", error);
+      toast({
+        title: "Error",
+        description: "Could not generate summary.",
+        variant: "destructive",
       });
     } finally {
       setIsGeneratingSummary(false);
@@ -59,23 +95,52 @@ export default function PaperDetails() {
   };
 
   const readAloud = async () => {
-    setIsReadingAloud(true);
-    try {
-      toast({
-        title: "Coming Soon",
-        description: "Text-to-speech functionality will be implemented soon!",
-      });
-    } catch (error) {
-      console.error('Error reading text:', error);
+    if (!summary) {
       toast({
         title: "Error",
-        description: "Could not read the text aloud",
-        variant: "destructive"
+        description: "No summary available to read.",
+        variant: "destructive",
       });
-    } finally {
+      return;
+    }
+  
+    setIsReadingAloud(true);
+    try {
+      const response = await fetch("https://api.openai.com/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "tts-1",
+          input: summary,
+          voice: "alloy", // Other options: "echo", "fable", "onyx", "nova", "shimmer"
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to generate speech");
+      }
+  
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.play();
+  
+      audio.onended = () => {
+        setIsReadingAloud(false);
+      };
+    } catch (error) {
+      console.error("Error reading text:", error);
+      toast({
+        title: "Error",
+        description: "Could not read the text aloud.",
+        variant: "destructive",
+      });
       setIsReadingAloud(false);
     }
-  };
+  };  
 
   if (!paper) return null;
 
