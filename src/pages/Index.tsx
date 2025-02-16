@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PaperCard } from '@/components/PaperCard';
-import { UserCircle } from 'lucide-react';
+import { UserCircle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { UserMenu } from '@/components/UserMenu';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getTopicColor } from '@/utils/topicColors';
-import { useAuth } from '@/hooks/useAuth';
+// import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import axios from "axios";
-
+// import { useToast } from '@/components/ui/use-toast';
 
 
 const API_BASE_URL = "http://127.0.0.1:8000";
-const { user } = useAuth();
 
 const backgrounds = [
   "linear-gradient(90deg, rgb(245,152,168) 0%, rgb(246,237,178) 100%)",
@@ -73,17 +73,24 @@ export default function Index() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  // const [isRefreshing, setIsRefreshing] = useState(false);
+  // const { toast } = useToast();
 
+  
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    // refetch
   } = useInfiniteQuery({
-    queryKey: ['papers',user?.id],
+    queryKey: ['papers'],
     initialPageParam: 1,
     queryFn: async ({ pageParam = 1 }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+    
 
       const response = await axios.get(`${API_BASE_URL}/papers`, {
         params: { user_id: user.id }
@@ -118,6 +125,22 @@ export default function Index() {
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextPage : undefined),
   });
 
+  // const handleRefresh = async () => {
+  //   setIsRefreshing(true);
+  //   try {
+  //     await refetch();
+
+  //   } catch (error) {
+  //     toast({
+  //       title: "Error",
+  //       description: "Could not refresh the feed",
+  //       variant: "destructive"
+  //     });
+  //   } finally {
+  //     setIsRefreshing(false);
+  //   }
+  // };
+
   const handleScroll = useCallback((entries: IntersectionObserverEntry[]) => {
     const [entry] = entries;
     if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
@@ -139,6 +162,18 @@ export default function Index() {
       }
     };
   }, [handleScroll]);
+
+//   <div className="fixed top-4 left-4 z-50">
+//   <Button
+//     variant="outline"
+//     onClick={handleRefresh}
+//     disabled={isRefreshing}
+//     className="bg-white/10 hover:bg-white/20"
+//   >
+//     <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+//     Refresh Feed
+//   </Button>
+// </div>
 
   if (isLoading) {
     return (

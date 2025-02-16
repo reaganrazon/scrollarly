@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +11,8 @@ import SignIn from "./pages/SignIn";
 import Login from "./pages/Login";
 import AboutMe from "./pages/AboutMe";
 import LikedPapers from "./pages/LikedPapers";
+import SavedPapers from "./pages/SavedPapers";
+import PaperDetails from "./pages/PaperDetails";
 
 const queryClient = new QueryClient();
 
@@ -27,7 +30,8 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/aboutme" element={<AboutMe />} />
           <Route path="/liked" element={<LikedPapers />} />
-          <Route path="/saved" element={<Navigate to="/home" replace />} />
+          <Route path="/saved" element={<SavedPapers />} />
+          <Route path="/paper/:title" element={<PaperDetails />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

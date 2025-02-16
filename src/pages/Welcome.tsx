@@ -11,10 +11,10 @@ export default function Welcome() {
         <div className="text-center space-y-4">
           <h1 className="text-5xl font-bold text-white">
             Welcome to
-            <span className="block text-6xl mt-2">Research.</span>
+            <span className="block text-6xl mt-2">Scrollarly!</span>
           </h1>
           <p className="text-xl text-blue-100">
-            Dive into new research and discover groundbreaking papers
+            Your research feed, simplified.
           </p>
         </div>
 

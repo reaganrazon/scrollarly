@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { BookmarkIcon, Share2Icon, Heart, ThumbsDown } from 'lucide-react';
+import { BookmarkIcon, Share2Icon, Heart, ThumbsDown, Info } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface PaperCardProps {
   title: string;
@@ -33,6 +34,7 @@ export const PaperCard: React.FC<PaperCardProps> = ({
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     checkIfLiked();
@@ -119,6 +121,20 @@ export const PaperCard: React.FC<PaperCardProps> = ({
     }
   };
 
+  const handleInfoClick = () => {
+    const encodedTitle = encodeURIComponent(title);
+    navigate(`/paper/${encodedTitle}`, { 
+      state: { 
+        title,
+        authors,
+        date,
+        doi,
+        background,
+        topic,
+        topicColor
+      }
+    });
+  };
 
   return (
     <div 
@@ -170,7 +186,14 @@ export const PaperCard: React.FC<PaperCardProps> = ({
             )}
           </AnimatePresence>
         </div>
-        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="rounded-full bg-white/10 hover:bg-white/20"
+          onClick={handleInfoClick}
+        >
+          <Info className="w-5 h-5" />
+        </Button>
         <Button 
           variant="ghost" 
           size="icon" 
